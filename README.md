@@ -1,17 +1,29 @@
 # Authentiq Provider for OAuth 2.0 Client
 
-[![License](https://img.shields.io/packagist/l/authentiq/oauth2-authentiq.svg)](https://github.com/authentiq/oauth2-authentiq/blob/master/LICENSE)
-[![Latest Stable Version](https://img.shields.io/packagist/v/authentiq/oauth2-authentiq.svg)](https://packagist.org/packages/authentiq/oauth2-authentiq)
-
 This package provides Authentiq OAuth 2.0 support for the PHP League's [OAuth 2.0 Client](https://github.com/thephpleague/oauth2-client).
 
 ## Installation
 
 To install, use composer:
 
+Add the repository to your `composer.json`
+
 ```
-composer require authentiq/oauth2-authentiq
+"repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/AuthentiqID/oauth2-authentiq"
+        }
+    ]
 ```
+
+And then do  
+
+```
+composer require authentiq/oauth2-authentiq-php
+```
+
+to update dependencies
 
 ## Usage
 
@@ -23,47 +35,52 @@ Usage is the same as The League's OAuth client, using `Authentiq\OAuth2\Client\P
 $provider = new Authentiq\OAuth2\Client\Provider\Authentiq([
     'clientId'     => '{authentiq-client-id}',
     'clientSecret' => '{authentiq-client-secret}',
-    'redirectUri'  => 'https://example.com/callback-url'
+    'redirectUri'  => 'https://example.com/callback-url',
+    'scope'        => 'aq:name aq push email'
 ]);
 
+// If we don't have an authorization code then get one
 if (!isset($_GET['code'])) {
 
-    // If we don't have an authorization code then get one
-    $authUrl = $provider->getAuthorizationUrl();
-    $_SESSION['oauth2state'] = $provider->state;
-    header('Location: ' . $authUrl);
+    // Fetch the authorization URL from the provider; this returns the
+    // urlAuthorize option and generates and applies any necessary parameters
+    // (e.g. state).
+    $authorizationUrl = $provider->getAuthorizationUrl();
+
+    // Get the state generated for you and store it to the session.
+    $_SESSION['oauth2state'] = $provider->getState();
+
+    // Redirect the user to the authorization URL.
+    header('Location: ' . $authorizationUrl);
     exit;
 
 // Check given state against previously stored one to mitigate CSRF attack
-} elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['oauth2state'])) {
+} elseif (empty($_GET['state']) || (isset($_SESSION['oauth2state']) && $_GET['state'] !== $_SESSION['oauth2state'])) {
 
-    unset($_SESSION['oauth2state']);
+    if (isset($_SESSION['oauth2state'])) {
+        unset($_SESSION['oauth2state']);
+    }
     exit('Invalid state');
 
 } else {
-
-    // Try to get an access token (using the authorization code grant)
-    $token = $provider->getAccessToken('authorization_code', [
-        'code' => $_GET['code']
-    ]);
-
-    // Optional: Now you have a token you can look up a users profile data
     try {
+        // Try to get an the IdToken using the authorization code grant.
+        $idToken = $provider->getAccessToken('authorization_code', [
+            'code' => $_GET['code']
+        ]);
 
-        // We got an access token, let's now get the user's details
-        $userDetails = $provider->getUserDetails($token);
+        // Using the ID token, create the resource owner.
+        $resourceOwner = $provider->getResourceOwner($idToken);
+                
+                // Now on the $resourceOwner contains all the user info you need to create the user, store the unique user id from the sub, present the info you asked for.
 
-        // Use these details to create a new profile
-        printf('Hello %s!', $userDetails->firstName);
 
-    } catch (Exception $e) {
+    } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
 
-        // Failed to get user details
-        exit('Oh dear...');
+        // Failed to get the access token or user details.
+        exit($e->getMessage());
+
     }
-
-    // Use this to interact with an API on the users behalf
-    echo $token->accessToken;
 }
 ```
 
