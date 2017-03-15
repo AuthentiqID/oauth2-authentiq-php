@@ -25,7 +25,7 @@ composer require authentiq/oauth2-authentiq-php
 
 to update dependencies
 
-## Or (even safer to get the branch you want)
+## Or
 
 Add the repository and the require to your composer file
 
@@ -37,7 +37,7 @@ Add the repository and the require to your composer file
     }
   ],
   "require": {
-    "authentiq/oauth2-authentiq-php": "dev-login-functionality"
+    "authentiq/oauth2-authentiq-php": "^0.0.1"
   }
 ```
 
