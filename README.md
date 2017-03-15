@@ -8,7 +8,7 @@ To install, use composer:
 
 Add the repository to your `composer.json`
 
-```
+```json
 "repositories": [
         {
             "type": "vcs",
@@ -24,6 +24,28 @@ composer require authentiq/oauth2-authentiq-php
 ```
 
 to update dependencies
+
+## Or (even safer to get the branch you want)
+
+Add the repository and the require to your composer file
+
+```json
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/AuthentiqID/oauth2-authentiq-php.git"
+    }
+  ],
+  "require": {
+    "authentiq/oauth2-authentiq-php": "dev-login-functionality"
+  }
+```
+
+And then do 
+```
+composer install
+```
+
 
 ## Usage
 
