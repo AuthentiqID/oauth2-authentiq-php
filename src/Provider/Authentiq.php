@@ -18,7 +18,7 @@ class Authentiq extends AbstractProvider
         if (isset($this->domain)) {
             return $this->domain;
         } else {
-            return 'https://test.connect.authentiq.io/';
+            return 'https://connect.authentiq.io/';
         }
     }
 
