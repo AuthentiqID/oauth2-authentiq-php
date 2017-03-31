@@ -5,27 +5,48 @@ namespace Authentiq\OAuth2\Client\Provider;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Grant\AbstractGrant;
 use Authentiq\OAuth2\Client\Token\AccessToken;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Psr\Http\Message\ResponseInterface;
 
 class Authentiq extends AbstractProvider
 {
-    public $scope = [];
-    public $idToken;
+    protected $scope = [];
+    protected $idToken;
 
     protected function domain()
     {
-        return 'https://dev.connect.authentiq.io/backchannel-logout/';
+        if (isset($this->domain)) {
+            return $this->domain;
+        } else {
+            return 'https://test.connect.authentiq.io/';
+        }
     }
 
     public function getBaseAuthorizationUrl()
     {
-        return $this->domain() . '/authorize';
+        if (isset($this->urlAuthorize)) {
+            return $this->urlAuthorize;
+        } else {
+            return $this->domain() . '/authorize';
+        }
     }
+
 
     public function getBaseAccessTokenUrl(array $params)
     {
-        return $this->domain() . '/token';
+        if (isset($this->urlAccessToken)) {
+            return $this->urlAccessToken;
+        } else {
+            return $this->domain() . '/token';
+        }
     }
+
+
+    /**
+     * The function needs to be implemented because its an abstract one. It  would built the /userinfo but it is not used anywhere so we return null from it
+     * @param \League\OAuth2\Client\Token\AccessToken $token
+     * @return null
+     */
 
     public function getResourceOwnerDetailsUrl(\League\OAuth2\Client\Token\AccessToken $token)
     {
@@ -37,20 +58,25 @@ class Authentiq extends AbstractProvider
         return $this->clientId;
     }
 
-    public function getClientSecret()
-    {
-        return $this->clientSecret;
-    }
-
     public function getProviderAlgorithm()
     {
-        return $this->algorithm;
+        if (isset($this->algorithm)) {
+            return $this->algorithm;
+        } else {
+            return ['HS256'];
+        }
     }
+
 
     public function getDomain()
     {
         return $this->domain();
     }
+
+    /**
+     * Read the set scopes and add openid to them if it does not exist
+     * @return array|string
+     */
 
     protected function getDefaultScopes()
     {
@@ -63,10 +89,42 @@ class Authentiq extends AbstractProvider
         }
     }
 
+
+    /**
+     * Checks a provider response for errors.
+     *
+     * @throws IdentityProviderException
+     * @param  ResponseInterface $response
+     * @param  array|string $data Parsed response data
+     * @return void
+     * This is the first function that is called when returning from the OP.
+     * Check for the http response but let it continue the execution to remain on the base package flow since check response is a void function.
+     */
+
     protected function checkResponse(ResponseInterface $response, $data)
     {
-        //Check id token here!
+        if ($response->getStatusCode() != 200) {
+
+        }
+
     }
+
+
+    protected function getScopeSeparator()
+    {
+        return ' ';
+    }
+
+    /**
+     * Override the original getResourceOwner function with its original AccessToken Argument which actually is an authentiq AccessToken.
+     * Normally here we would make a call to fetch the user data from user_info but instead we get the IDtoken from token and get it's claims to create the user info ourselves with createResourceOwner
+     *
+     * Check here for the original: https://github.com/thephpleague/oauth2-client/blob/master/src/Provider/AbstractProvider.php#L742
+     *
+     * @param \League\OAuth2\Client\Token\AccessToken $token
+     * @return AuthentiqResourceOwner
+     */
+
 
     public function getResourceOwner(\League\OAuth2\Client\Token\AccessToken $token)
     {
@@ -74,18 +132,28 @@ class Authentiq extends AbstractProvider
         return $this->createResourceOwner($data, $token);
     }
 
+    /**
+     * Implement the abstract function and we return an Authentiq Resource owner
+     * Use \League\OAuth2\Client\Token\AccessToken in the argument so that we can implement the function based on its declaration
+     * @param array $response
+     * @param \League\OAuth2\Client\Token\AccessToken $token
+     * @return AuthentiqResourceOwner
+     */
+
     protected function createResourceOwner(array $response, \League\OAuth2\Client\Token\AccessToken $token)
     {
         return new AuthentiqResourceOwner($response);
     }
 
-    protected function getScopeSeparator()
-    {
-        return ' ';
-    }
 
+    /**
+     * Create the Authentiq access token instead of the original one
+     *
+     *  We name the response of this function  Access token (of Authentiq\Oauth2\Client\Token\AccessToken) to override the function declaration
+     *
+     */
     protected function createAccessToken(array $response, AbstractGrant $grant)
     {
-        return new AccessToken($response, $this);
+        return new AccessToken($response, $this, $this->clientSecret);
     }
 }

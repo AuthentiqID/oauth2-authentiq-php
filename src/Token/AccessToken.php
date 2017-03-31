@@ -7,8 +7,10 @@
 
 namespace Authentiq\OAuth2\Client\Token;
 
+use Exception;
+use Firebase\JWT\BeforeValidException;
+use Firebase\JWT\JWT;
 use RuntimeException;
-use \Firebase\JWT\JWT;
 
 class AccessToken extends \League\OAuth2\Client\Token\AccessToken
 {
@@ -18,7 +20,7 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
     /**
      * Token constructor.
      */
-    public function __construct(array $options = [], $provider)
+    public function __construct(array $options = [], $provider, $clientSecret)
     {
         parent::__construct($options);
 
@@ -31,21 +33,21 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
                 $tokens = explode('.', $this->idToken);
                 // Check if the id_token contains signature
                 if(count($tokens) == 3 && !empty($tokens[2])) {
-                    $idTokenClaims = (array)JWT::decode($this->idToken, $provider->getClientSecret(), ['HS256']);
+                    $idTokenClaims = (array)JWT::decode($this->idToken, $clientSecret, $provider->getProviderAlgorithm());
                 }
-            }  catch (JWT_Exception $e) {
+            }  catch (Exception $e) {
                 throw new RuntimeException("Unable to parse the id_token!");
             }
 
         }
 
         if ($provider->getClientId() != $idTokenClaims['aud']){
-            throw new \RuntimeException('Invalid audience');
+            throw new RuntimeException('Invalid audience');
         }
 
         if($idTokenClaims['nbf'] > time() || $idTokenClaims['exp'] < time()) {
             // Additional validation is being performed in firebase/JWT itself
-            throw new RuntimeException("The id token is invalid!");
+            throw new BeforeValidException("The id token is invalid!");
         }
 
         if($idTokenClaims['sub'] == null){
@@ -67,14 +69,4 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
     {
         return $this->idTokenClaims;
     }
-
-    protected function algorithm($provider)
-    {
-        if ($provider->getProviderAlgorithm() != null) {
-            return $provider->getProviderAlgorithm();
-        } else {
-            return ['HS256'];
-        }
-    }
-
 }
