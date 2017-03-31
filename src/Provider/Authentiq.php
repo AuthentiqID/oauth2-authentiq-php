@@ -44,6 +44,7 @@ class Authentiq extends AbstractProvider
 
     /**
      * The function needs to be implemented because its an abstract one. It  would built the /userinfo but it is not used anywhere so we return null from it
+     * Todo: We may use this function as a fallback to the idtoken. So here we should return the normal endpoint
      * @param \League\OAuth2\Client\Token\AccessToken $token
      * @return null
      */
