@@ -1,5 +1,6 @@
 <?php
 /**
+ * Authentiq Access Token
  * User: alexkeramidas
  * Date: 14/3/2017
  * Time: 8:34 μμ
@@ -9,6 +10,7 @@ namespace Authentiq\OAuth2\Client\Token;
 
 use Exception;
 use Firebase\JWT\BeforeValidException;
+use InvalidArgumentException;
 use Firebase\JWT\JWT;
 use RuntimeException;
 
@@ -18,11 +20,17 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
     protected $idTokenClaims;
 
     /**
-     * Token constructor.
+     * Authentiq Access Token constructor that extends the original Access token constructor and gives back user info through the id token.
      */
+
     public function __construct(array $options = [], $provider, $clientSecret)
     {
+            if (!isset($clientSecret)) {
+            throw new InvalidArgumentException('Please use the parent constructor with only one argument as a client_secret is needed for this one');
+        }
+
         parent::__construct($options);
+
 
         JWT::$leeway = 60;
 
@@ -36,7 +44,7 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
                     $idTokenClaims = (array)JWT::decode($this->idToken, $clientSecret, $provider->getProviderAlgorithm());
                 }
             }  catch (Exception $e) {
-                throw new RuntimeException("Unable to parse the id_token!");
+                throw new RuntimeException("Unable to decode the id_token! The secret or the encryption algorithm used is incorrect");
             }
 
         }

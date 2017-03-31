@@ -11,7 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 class Authentiq extends AbstractProvider
 {
     protected $scope = [];
-    protected $idToken;
+    protected $idToken, $domain, $urlAuthorize, $urlAccessToken, $algorithm;
 
     protected function domain()
     {
@@ -61,7 +61,7 @@ class Authentiq extends AbstractProvider
     public function getProviderAlgorithm()
     {
         if (isset($this->algorithm)) {
-            return $this->algorithm;
+            return [$this->algorithm];
         } else {
             return ['HS256'];
         }
@@ -99,14 +99,20 @@ class Authentiq extends AbstractProvider
      * @return void
      * This is the first function that is called when returning from the OP.
      * Check for the http response but let it continue the execution to remain on the base package flow since check response is a void function.
+     * Error handling is done by the base package
      */
 
     protected function checkResponse(ResponseInterface $response, $data)
     {
-        if ($response->getStatusCode() != 200) {
-
+        if (!empty($data['error'])) {
+            $code  = 0;
+            $error = $data['error'];
+            if (is_array($error)) {
+                $code  = $error['code'];
+                $error = $error['message'];
+            }
+            throw new IdentityProviderException($error, $code, $data);
         }
-
     }
 
 
@@ -116,8 +122,8 @@ class Authentiq extends AbstractProvider
     }
 
     /**
-     * Override the original getResourceOwner function with its original AccessToken Argument which actually is an authentiq AccessToken.
-     * Normally here we would make a call to fetch the user data from user_info but instead we get the IDtoken from token and get it's claims to create the user info ourselves with createResourceOwner
+     * Override the original getResourceOwner function with its original AccessToken Argument which actually is an Authentiq AccessToken.
+     * Normally here we would make a call to fetch the user data from user_info but instead we get the IDtoken from $token and get it's claims to create the user info ourselves with createResourceOwner
      *
      * Check here for the original: https://github.com/thephpleague/oauth2-client/blob/master/src/Provider/AbstractProvider.php#L742
      *
