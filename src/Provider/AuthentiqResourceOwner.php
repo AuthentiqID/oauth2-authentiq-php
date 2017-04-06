@@ -36,7 +36,7 @@ class AuthentiqResourceOwner implements ResourceOwnerInterface
      */
     public function getId()
     {
-        return $this->claim('sid');
+        return $this->claim('sub');
     }
 
     /**
