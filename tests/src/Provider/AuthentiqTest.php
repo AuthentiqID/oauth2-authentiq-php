@@ -1,25 +1,50 @@
 <?php
+/**
+ * Created by alexkeramidas for Authentiq B.V.
+ * Authentiq Test
+ * User: alexkeramidas
+ * Date: 6/4/2017
+ * Time: 12:00 μμ
+ */
 namespace Authentiq\OAuth2\Client\Test\Provider;
 
-use Authentiq\OAuth2\Client\Provider\Authentiq as OauthProvider;
+use Authentiq\OAuth2\Client\Provider\Authentiq;
+use Mockery as m;
+use PHPUnit\Framework\TestCase;
 
-class AuthentiqTest extends \PHPUnit_Framework_TestCase
+class AuthentiqTest extends TestCase
 {
-    protected $config = [
-        'account'      => 'mock_account',
-        'clientId'     => 'mock_client_id',
-        'clientSecret' => 'mock_secret',
-        'redirectUri'  => 'none',
-    ];
+    protected $provider;
+
+    protected function setUp(){
+        $this->provider = new Authentiq([
+            'domain'                  => 'https://example.com',
+            'clientId'                => 'mock_client_id',
+            'clientSecret'            => 'mock_secret',
+            'redirectUri'             => 'none',
+            'scope' => 'aq:name address aq:location aq:push email phone'
+        ]);
+    }
+
+    public function tearDown()
+    {
+        m::close();
+        parent::tearDown();
+    }
+
 
     public function testGetAuthorizationUrl()
     {
-        $provider = new OauthProvider($this->config);
-        $url = $provider->urlAuthorize();
+        $url = $this->provider->getBaseAuthorizationUrl();
         $uri = parse_url($url);
 
-        $this->assertEquals($this->config['account'] . '.authentiq.com', $uri['host']);
-        $this->assertEquals('/authorize', $uri['path']);
+        $this->assertArrayHasKey('client_id', $query);
+        $this->assertArrayHasKey('redirect_uri', $query);
+        $this->assertArrayHasKey('state', $query);
+        $this->assertArrayHasKey('scope', $query);
+        $this->assertArrayHasKey('response_type', $query);
+        $this->assertArrayHasKey('approval_prompt', $query);
+        $this->assertNotNull($this->provider->getState());
     }
 
     public function testGetAuthorizationUrlWhenAccountIsNotSpecifiedShouldThrowException()

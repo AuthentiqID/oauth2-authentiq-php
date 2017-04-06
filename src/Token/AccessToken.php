@@ -1,5 +1,7 @@
 <?php
 /**
+ * Created by alexkeramidas for Authentiq B.V.
+ * Authentiq Access Token
  * User: alexkeramidas
  * Date: 14/3/2017
  * Time: 8:34 μμ
@@ -7,8 +9,11 @@
 
 namespace Authentiq\OAuth2\Client\Token;
 
+use Exception;
+use Firebase\JWT\BeforeValidException;
+use InvalidArgumentException;
+use Firebase\JWT\JWT;
 use RuntimeException;
-use \Firebase\JWT\JWT;
 
 class AccessToken extends \League\OAuth2\Client\Token\AccessToken
 {
@@ -16,48 +21,60 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
     protected $idTokenClaims;
 
     /**
-     * Token constructor.
+     * Authentiq Access Token constructor that extends the original Access token constructor and gives back user info through the id token.
      */
-    public function __construct(array $options = [], $provider)
+
+    public function __construct(array $options = [], $provider, $clientSecret)
     {
+        if (!isset($clientSecret)) {
+            throw new InvalidArgumentException('Please use the parent constructor with only one argument as a client_secret is needed for this one');
+        }
+
         parent::__construct($options);
+
 
         JWT::$leeway = 60;
 
-        if(!empty($options['id_token'])){
+        if (!empty($options['id_token'])) {
             $this->idToken = $options['id_token'];
             $this->idTokenClaims = null;
             try {
                 $tokens = explode('.', $this->idToken);
-                // Check if the id_token contains signature
-                if(count($tokens) == 3 && !empty($tokens[2])) {
-                    $idTokenClaims = (array)JWT::decode($this->idToken, $provider->getClientSecret(), ['HS256']);
+                // Check if the id_token contains signature and try to decode it.
+                if (count($tokens) == 3 && !empty($tokens[2])) {
+                    $idTokenClaims = (array)JWT::decode($this->idToken, $clientSecret, $provider->getProviderAlgorithm());
                 }
-            }  catch (JWT_Exception $e) {
-                throw new RuntimeException("Unable to parse the id_token!");
+            } catch (Exception $e) {
+                throw new RuntimeException("Unable to decode the id_token! The secret or the encryption algorithm used is incorrect");
             }
 
         }
 
-        if ($provider->getClientId() != $idTokenClaims['aud']){
-            throw new \RuntimeException('Invalid audience');
+        /**
+         * Authentiq validations for the jwt (audience, sub and issuer)
+         * The JWT library used also checks for
+         * Empty key
+         * Not allowed, unsupported or empty algorithm
+         * Incorrect number of segments
+         * Incorrect header encoding
+         * Signature verification
+         * If the nbf, iat, exp in conjunction with the leeway are defined and valid.
+         */
+
+        if (is_array($idTokenClaims['aud'])) {
+            if (strpos(implode(" ", $idTokenClaims['aud']), $provider->getClientId()) === false) {
+                throw new RuntimeException('Invalid audience');
+            }
+        } else if ($provider->getClientId() != $idTokenClaims['aud']) {
+            throw new RuntimeException('Invalid audience');
         }
 
-        if($idTokenClaims['nbf'] > time() || $idTokenClaims['exp'] < time()) {
-            // Additional validation is being performed in firebase/JWT itself
-            throw new RuntimeException("The id token is invalid!");
-        }
-
-        if($idTokenClaims['sub'] == null){
+        if ($idTokenClaims['sub'] == null) {
             throw new RuntimeException("The id token's sub is invalid!");
         }
 
-        if($idTokenClaims['iss'] == null || $idTokenClaims['iss']  != $provider->getDomain()){
+        if ($idTokenClaims['iss'] == null || $idTokenClaims['iss'] != $provider->getDomain()) {
             throw new RuntimeException("The id token's issuer is invalid!");
-        }
-
-        if($idTokenClaims['iat'] == null){
-            throw new RuntimeException("The id token's issued time is null!");
         }
 
         $this->idTokenClaims = $idTokenClaims;
@@ -67,14 +84,4 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
     {
         return $this->idTokenClaims;
     }
-
-    protected function algorithm($provider)
-    {
-        if ($provider->getProviderAlgorithm() != null) {
-            return $provider->getProviderAlgorithm();
-        } else {
-            return ['HS256'];
-        }
-    }
-
 }
