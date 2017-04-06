@@ -1,7 +1,7 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: alex
+ * Created by alexkeramidas for Authentiq B.V.
+ * User: alexkeramidas
  * Date: 14/3/2017
  * Time: 8:28 μμ
  */

@@ -1,5 +1,6 @@
 <?php
 /**
+ * Created by alexkeramidas for Authentiq B.V.
  * Authentiq Access Token
  * User: alexkeramidas
  * Date: 14/3/2017
@@ -60,7 +61,11 @@ class AccessToken extends \League\OAuth2\Client\Token\AccessToken
          * If the nbf, iat, exp in conjunction with the leeway are defined and valid.
          */
 
-        if ($provider->getClientId() != $idTokenClaims['aud']) {
+        if (is_array($idTokenClaims['aud'])) {
+            if (strpos(implode(" ", $idTokenClaims['aud']), $provider->getClientId()) === false) {
+                throw new RuntimeException('Invalid audience');
+            }
+        } else if ($provider->getClientId() != $idTokenClaims['aud']) {
             throw new RuntimeException('Invalid audience');
         }
 

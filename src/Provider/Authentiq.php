@@ -1,4 +1,11 @@
 <?php
+/**
+ * Created by alexkeramidas for Authentiq B.V.
+ * Authentiq
+ * User: alexkeramidas
+ * Date: 14/3/2017
+ * Time: 8:28 μμ
+ */
 
 namespace Authentiq\OAuth2\Client\Provider;
 
