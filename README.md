@@ -6,44 +6,8 @@ This package provides Authentiq OAuth 2.0 support for the PHP League's [OAuth 2.
 
 To install, use composer:
 
-Add the repository to your `composer.json`
-
-```json
-"repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/AuthentiqID/oauth2-authentiq"
-        }
-    ]
 ```
-
-And then do  
-
-```
-composer require authentiq/oauth2-authentiq-php
-```
-
-to update dependencies
-
-## Or
-
-Add the repository and the require to your composer file
-
-```json
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/AuthentiqID/oauth2-authentiq-php.git"
-    }
-  ],
-  "require": {
-    "authentiq/oauth2-authentiq-php": "^0.0.1"
-  }
-```
-
-And then do 
-```
-composer install
+composer require authentiq/oauth2-authentiq
 ```
 
 
@@ -55,9 +19,9 @@ Usage is the same as The League's OAuth client, using `Authentiq\OAuth2\Client\P
 
 ```php
 $provider = new Authentiq\OAuth2\Client\Provider\Authentiq([
-    'clientId'     => '{authentiq-client-id}',
-    'clientSecret' => '{authentiq-client-secret}',
-    'redirectUri'  => 'https://example.com/callback-url',
+    'clientId'     => 'authentiq-client-id',
+    'clientSecret' => 'authentiq-client-secret',
+    'redirectUri'  => 'your-callback-url',
     'scope'        => 'aq:name aq push email'
 ]);
 
@@ -94,7 +58,9 @@ if (!isset($_GET['code'])) {
         // Using the ID token, create the resource owner.
         $resourceOwner = $provider->getResourceOwner($idToken);
                 
-                // Now on the $resourceOwner contains all the user info you need to create the user, store the unique user id from the sub, present the info you asked for.
+        // Now the $resourceOwner contains all the user info you need to create the user, 
+        // store the unique user id from the sub 
+        // or present the info you asked for.
 
 
     } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
