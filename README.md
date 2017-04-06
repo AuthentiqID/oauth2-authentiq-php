@@ -22,7 +22,7 @@ $provider = new Authentiq\OAuth2\Client\Provider\Authentiq([
     'clientId'     => 'authentiq-client-id',
     'clientSecret' => 'authentiq-client-secret',
     'redirectUri'  => 'your-callback-url',
-    'scope'        => 'aq:name aq push email'
+    'scope'        => 'openid email~rs phone~r aq:name aq:push'
 ]);
 
 // If we don't have an authorization code then get one
