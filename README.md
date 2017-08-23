@@ -1,6 +1,6 @@
 # Authentiq Provider for OAuth 2.0 Client
 
-This package provides Authentiq OAuth 2.0 support for the PHP League's [OAuth 2.0 Client](https://github.com/thephpleague/oauth2-client).
+This package provides [Authentiq](https://www.authentiq.com/developers/?utm_source=github&utm_medium=readme&utm_campaign=oauth2-authentiq-php) support for the PHP League's [OAuth 2.0 Client](https://github.com/thephpleague/oauth2-client).
 
 ## Installation
 
